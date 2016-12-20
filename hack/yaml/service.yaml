@@ -6,7 +6,7 @@ metadata:
     app: client-ip
 spec:
   ports:
-  - port: 4730
+  - port: 5050
     protocol: TCP
     targetPort: http
   selector:
