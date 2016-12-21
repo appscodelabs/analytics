@@ -24,7 +24,7 @@ fi
 build_binary() {
 	pushd $GOPATH/src/github.com/appscode/client-ip
 	./hack/builddeps.sh
-    ./hack/make.py build_all
+    ./hack/make.py build
 	detect_tag $GOPATH/src/github.com/appscode/client-ip/dist/.tag
 	popd
 }
