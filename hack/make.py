@@ -95,7 +95,6 @@ def build_cmd(name):
 
 
 def build_cmds():
-    fmt()
     for name in libbuild.BIN_MATRIX:
         build_cmd(name)
 
@@ -104,7 +103,6 @@ def build(name=None):
     if name:
         cfg = libbuild.BIN_MATRIX[name]
         if cfg['type'] == 'go':
-            fmt()
             build_cmd(name)
     else:
         build_cmds()
