@@ -43,6 +43,7 @@ RUN set -x \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
 COPY client-ip /client-ip
+ENTRYPOINT ["/client-ip"]
 EOL
 	local cmd="docker build -t appscode/$IMG:$TAG ."
 	echo $cmd; $cmd
