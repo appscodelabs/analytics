@@ -1,0 +1,14 @@
+hash: 95da26412e906fd873a2436b60202cc360015e1cb80198b7b336525dcf9f7b31
+updated: 2016-12-30T02:36:24.569849491-08:00
+imports:
+- name: github.com/appscode/go
+  version: 7995bcb0419b6ed977ca66d4482c3a625847270e
+  subpackages:
+  - flags
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/spf13/cobra
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
+- name: github.com/spf13/pflag
+  version: 5ccb023bc27df288a957c5e994cd44fd19619465
+testImports: []

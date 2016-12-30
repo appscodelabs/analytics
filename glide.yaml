@@ -1,0 +1,4 @@
+package: github.com/appscode/client-ip
+import:
+- package: github.com/appscode/go
+- package: github.com/spf13/pflag
