@@ -11,7 +11,7 @@ import (
 func main() {
 	http.DefaultServeMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			ip, port, err := net.SplitHostPort(r.RemoteAddr)
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("userip: %q is not IP:port", r.RemoteAddr), 500)
 				return
