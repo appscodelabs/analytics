@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -12,13 +13,13 @@ func main() {
 		if r.Method == "GET" {
 			ip, port, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
-				fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
+				http.Error(w, fmt.Sprintf("userip: %q is not IP:port", r.RemoteAddr), 500)
 				return
 			}
 
 			userIP := net.ParseIP(ip)
 			if userIP == nil {
-				fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
+				http.Error(w, fmt.Sprintf("userip: %q is not IP:port", r.RemoteAddr), 500)
 				return
 			}
 
@@ -27,11 +28,16 @@ func main() {
 			// Header.Get is case-insensitive
 			forward := r.Header.Get("X-Forwarded-For")
 
-			fmt.Fprintf(w, "<p>IP: %s</p>", ip)
-			fmt.Fprintf(w, "<p>Port: %s</p>", port)
-			fmt.Fprintf(w, "<p>Forwarded for: %s</p>", forward)
-		} else {
+			//fmt.Fprintf(w, "<p>IP: %s</p>", ip)
+			//fmt.Fprintf(w, "<p>Port: %s</p>", port)
+			//fmt.Fprintf(w, "<p>Forwarded for: %s</p>", forward)
 
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"ip":            ip,
+				"forwarded_for": forward,
+			})
+		} else {
 			http.Error(w, "Method not allowed", 405)
 			return
 		}
