@@ -97,7 +97,7 @@ func main() {
 			}
 			caCertPool := x509.NewCertPool()
 			caCertPool.AppendCertsFromPEM(caCert)
-			tlsConfig.ClientCAs = :  caCertPool
+			tlsConfig.ClientCAs = caCertPool
 		}
 		tlsConfig.BuildNameToCertificate()
 

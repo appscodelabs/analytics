@@ -75,12 +75,12 @@ def version():
 
 
 def fmt():
-    die(call('goimports -w .'))
-    call('go fmt .')
+    die(call('goimports -w main.go'))
+    call('gofmt -s -w main.go')
 
 
 def vet():
-    call('go vet .')
+    call('go vet main.go')
 
 
 def build_cmd(name):
