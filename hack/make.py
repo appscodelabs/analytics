@@ -41,7 +41,7 @@ BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
     'client-ip': {
         'type': 'go',
-        'go_version': True,
+        'go_version': False,
         'distro': {
             'linux': ['amd64']
         }
