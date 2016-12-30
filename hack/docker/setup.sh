@@ -35,14 +35,11 @@ build_docker() {
 	chmod 755 client-ip
 
 	cat >Dockerfile <<EOL
-FROM appscode/base:8.6
-
-RUN set -x \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates \
-  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
+FROM alpine
 
 COPY client-ip /client-ip
+
+USER nobody:nobody
 ENTRYPOINT ["/client-ip"]
 EOL
 	local cmd="docker build -t appscode/$IMG:$TAG ."
