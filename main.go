@@ -50,8 +50,9 @@ func main() {
 
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
-				"ip":            ip,
-				"forwarded_for": forward,
+				"ip":              ip,
+				"forwarded_for":   forward,
+				"request_headers": r.Header,
 			})
 		} else {
 			http.Error(w, "Method not allowed", 405)
