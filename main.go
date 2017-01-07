@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/appscode/go/flags"
@@ -41,19 +42,18 @@ func main() {
 
 			// This will only be defined when site is accessed via non-anonymous proxy
 			// and takes precedence over RemoteAddr
-			// Header.Get is case-insensitive
 			forward := r.Header.Get("X-Forwarded-For")
 
-			//fmt.Fprintf(w, "<p>IP: %s</p>", ip)
-			//fmt.Fprintf(w, "<p>Port: %s</p>", port)
-			//fmt.Fprintf(w, "<p>Forwarded for: %s</p>", forward)
+			data := map[string]interface{}{
+				"ip":            ip,
+				"forwarded_for": forward,
+			}
+			if strings.EqualFold(r.URL.Query().Get("include_headers"), "true") {
+				data["request_headers"] = r.Header
+			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"ip":              ip,
-				"forwarded_for":   forward,
-				"request_headers": r.Header,
-			})
+			json.NewEncoder(w).Encode(data)
 		} else {
 			http.Error(w, "Method not allowed", 405)
 			return
