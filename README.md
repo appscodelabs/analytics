@@ -3,6 +3,9 @@
 # client-ip
 Display Client IP
 
+## Motivation
+Cloud providers like Google Cloud Platform does not assign public ip to an interface on the VM. This tool & hosted service can be used to detect public ip address from inside a VM on those cloud providers. 
+
 ## Usage
 ### CLI
 ```bash
@@ -22,4 +25,6 @@ kubectl expose deployment client-ip --port=60010
 kubectl set image deployment/client-ip client-ip=appscode/client-ip:<updated-tag>
 ```
 ### Hosted Service
-To use a hosted version of this tool, check here: https://my-ip.space/index.json
+To use a hosted version of this tool, check below:
+* Get Client IP: https://my-ip.space/index.json
+* Get IP & request headers: https://my-ip.space/index.json?include_headers=true
