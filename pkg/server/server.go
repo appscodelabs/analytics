@@ -15,7 +15,7 @@ import (
 )
 
 type Server struct {
-	APIAddress string
+	WebAddress string
 	CACertFile string
 	CertFile   string
 	KeyFile    string
@@ -36,7 +36,7 @@ func (s Server) ListenAndServe() {
 	m := pat.New()
 	m.Get("/whoami", http.HandlerFunc((clientip.WhoAmI)))
 	srv := &http.Server{
-		Addr:         s.APIAddress,
+		Addr:         s.WebAddress,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		Handler:      m,
