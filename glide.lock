@@ -1,5 +1,5 @@
-hash: 43246b3dc09a12eb3d1c2fe91d54e4e99cf4bfab99131fb5992edcb4e4a41afd
-updated: 2017-08-08T14:53:53.443909256-07:00
+hash: 98c42c283968d71da06dd12f3d6d18d1ba8745d1c21c1053f14b39769a9232e0
+updated: 2017-08-08T15:11:14.465533486-07:00
 imports:
 - name: github.com/appscode/go
   version: 95092d156baddb2d9aab547739669496d58ab6bd
@@ -26,8 +26,6 @@ imports:
   version: 8ee79997227bf9b34611aee7946ae64735e6fd93
   subpackages:
   - proto
-- name: github.com/grpc-ecosystem/go-grpc-prometheus
-  version: 0c1b191dbfe51efdabe3c14b9f6f3b96429e0722
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jpillora/go-ogle-analytics
