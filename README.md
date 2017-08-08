@@ -1,12 +1,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/analytics)](https://goreportcard.com/report/github.com/appscode/analytics)
 
-[Website](https://appscode.com) • [Slack](https://slack.appscode.com) • [Forum](https://discuss.appscode.com) • [Twitter](https://twitter.com/AppsCodeHQ)
+[Website](https://appscode.com) • [Slack](https://slack.appscode.com) • [Twitter](https://twitter.com/AppsCodeHQ)
 
 # analytics
-Display Client IP
+Essential analytics for OSS
 
 ## Motivation
-Cloud providers like Google Cloud Platform does not assign public ip to an interface on the VM. This tool & hosted service can be used to detect public ip address from inside a VM on those cloud providers. 
+Cloud providers like Google Cloud Platform does not assign public ip to an interface on the VM. This tool & hosted service can be used to detect public ip address from inside a VM on those cloud providers.
 
 ## Usage
 ### CLI
