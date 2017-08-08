@@ -1,8 +1,8 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/appscode/client-ip)](https://goreportcard.com/report/github.com/appscode/client-ip)
+[![Go Report Card](https://goreportcard.com/badge/github.com/appscode/analytics)](https://goreportcard.com/report/github.com/appscode/analytics)
 
 [Website](https://appscode.com) • [Slack](https://slack.appscode.com) • [Forum](https://discuss.appscode.com) • [Twitter](https://twitter.com/AppsCodeHQ)
 
-# client-ip
+# analytics
 Display Client IP
 
 ## Motivation
@@ -14,17 +14,17 @@ Cloud providers like Google Cloud Platform does not assign public ip to an inter
 go run main.go
 ```
 ### Docker
-Link: https://hub.docker.com/r/appscode/client-ip/
+Link: https://hub.docker.com/r/appscode/analytics/
 ```bash
-docker pull appscode/client-ip
+docker pull appscode/analytics
 ```
 ### Kubernetes
 ```bash
-kubectl run client-ip --image=appscode/client-ip:1.1.0 --port=60010
-kubectl expose deployment client-ip --port=60010
+kubectl run analytics --image=appscode/analytics:1.1.0 --port=60010
+kubectl expose deployment analytics --port=60010
 
 # update image
-kubectl set image deployment/client-ip client-ip=appscode/client-ip:<updated-tag>
+kubectl set image deployment/analytics analytics=appscode/analytics:<updated-tag>
 ```
 ### Hosted Service
 To use a hosted version of this tool, check below:

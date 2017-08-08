@@ -5,7 +5,7 @@
 # - ???
 # - Profit
 
-pushd $GOPATH/src/github.com/appscode/client-ip
+pushd $GOPATH/src/github.com/appscode/analytics
 
 glide up -v
 glide vc --only-code --no-tests

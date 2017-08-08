@@ -36,10 +36,10 @@ import sys
 from os.path import expandvars
 
 
-libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/appscode/client-ip'
+libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/appscode/analytics'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
-    'client-ip': {
+    'analytics': {
         'type': 'go',
         'go_version': False,
         'distro': {

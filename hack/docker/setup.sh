@@ -12,46 +12,82 @@ GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
 ROOT=$GOPATH
+REPO_ROOT=$GOPATH/src/github.com/appscode/analytics
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 
-IMG=client-ip
+IMG=gearmand
 # TAG=0.1.0
-if [ -f "$GOPATH/src/github.com/appscode/client-ip/dist/.tag" ]; then
-	export $(cat $GOPATH/src/github.com/appscode/client-ip/dist/.tag | xargs)
+if [ -f "$REPO_ROOT/dist/.tag" ]; then
+	export $(cat $REPO_ROOT/dist/.tag | xargs)
 fi
 
+clean() {
+	pushd $REPO_ROOT/hack/docker
+	rm gearmand Dockerfile
+	popd
+}
+
 build_binary() {
-	pushd $GOPATH/src/github.com/appscode/client-ip
+	pushd $REPO_ROOT
 	./hack/builddeps.sh
-    ./hack/make.py build
-	detect_tag $GOPATH/src/github.com/appscode/client-ip/dist/.tag
+	./hack/make.py build gearmand
+	detect_tag $REPO_ROOT/dist/.tag
 	popd
 }
 
 build_docker() {
-	pushd $GOPATH/src/github.com/appscode/client-ip/hack/docker
-	cp $GOPATH/src/github.com/appscode/client-ip/dist/client-ip/client-ip-linux-amd64 client-ip
-	chmod 755 client-ip
+	pushd $REPO_ROOT/hack/docker
+	cp $REPO_ROOT/dist/gearmand/gearmand-alpine-amd64 gearmand
+	chmod 755 gearmand
 
 	cat >Dockerfile <<EOL
 FROM alpine
 
-COPY client-ip /client-ip
+RUN set -x \
+  && apk add --update --no-cache ca-certificates
+
+COPY gearmand /gearmand
 
 USER nobody:nobody
-ENTRYPOINT ["/client-ip"]
+ENTRYPOINT ["/gearmand"]
 EOL
 	local cmd="docker build -t appscode/$IMG:$TAG ."
 	echo $cmd; $cmd
 
-	rm client-ip Dockerfile
+	rm gearmand Dockerfile
 	popd
 }
 
 build() {
 	build_binary
 	build_docker
+}
+
+docker_push() {
+	if [ "$APPSCODE_ENV" = "prod" ]; then
+		echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"
+		exit 0
+	fi
+
+    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
+        docker push appscode/$IMG:$TAG
+    fi
+}
+
+docker_release() {
+	if [ "$APPSCODE_ENV" != "prod" ]; then
+		echo "'release' only works in PROD env."
+		exit 1
+	fi
+	if [ "$TAG_STRATEGY" != "git_tag" ]; then
+		echo "'apply_tag' to release binaries and/or docker images."
+		exit 1
+	fi
+
+    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
+        docker push appscode/$IMG:$TAG
+    fi
 }
 
 source_repo $@
