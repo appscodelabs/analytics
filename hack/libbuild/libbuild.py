@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
+# Needed for antipackage with python 2
 from __future__ import absolute_import
+
 import datetime
+import fnmatch
+import glob
 import io
 import json
 import os
 import os.path
+import re
 import socket
 import subprocess
 import sys
@@ -33,6 +38,7 @@ def _goenv():
 
 
 GOENV = _goenv()
+GOPATH = GOENV["GOPATH"]
 GOHOSTOS = GOENV["GOHOSTOS"]
 GOHOSTARCH = GOENV["GOHOSTARCH"]
 GOC = 'go'
@@ -55,7 +61,7 @@ def metadata(cwd, goos='', goarch=''):
     if md['git_tag']:
         md['version'] = md['git_tag']
         md['version_strategy'] = 'tag'
-    elif not md['git_branch'] in ['master', 'HEAD']:
+    elif not md['git_branch'] in ['master', 'HEAD'] and not md['git_branch'].startswith('release-'):
         md['version'] = md['git_branch']
         md['version_strategy'] = 'branch'
     else:
@@ -105,9 +111,8 @@ def read_json(name):
 
 
 def write_json(obj, name):
-    with io.open(name, 'w') as f:
-        data = json.dumps(obj, indent=2, separators=(',', ': '), ensure_ascii=False)
-        f.write(data)
+    with io.open(name, 'w', encoding='utf-8') as f:
+        f.write(unicode(json.dumps(obj, indent=2, separators=(',', ': '), ensure_ascii=False)))
 
 
 def call(cmd, stdin=None, cwd=None):
@@ -125,6 +130,17 @@ def check_output(cmd, stdin=None, cwd=None):
     return subprocess.check_output([expandvars(cmd)], shell=True, stdin=stdin, cwd=cwd)
 
 
+def deps():
+    die(call('go get -u golang.org/x/tools/cmd/goimports'))
+    die(call('go get -u golang.org/x/tools/cmd/stringer'))
+    die(call('go get -u github.com/Masterminds/glide'))
+    die(call('go get -u github.com/sgotti/glide-vc'))
+    die(call('go get -u github.com/jteeuwen/go-bindata/...'))
+    die(call('go get -u github.com/progrium/go-extpoints'))
+    die(call('go get -u github.com/tools/godep'))
+    die(call('go get -u github.com/uber/go-torch'))
+
+
 def to_upper_camel(lower_snake):
     components = lower_snake.split('_')
     # We capitalize the first letter of each component
@@ -135,9 +151,16 @@ def to_upper_camel(lower_snake):
 # ref: https://golang.org/cmd/go/
 def go_build(name, goos, goarch, main):
     linker_opts = []
-    for k, v in metadata(REPO_ROOT, goos, goarch).iteritems():
-        linker_opts.append('-X')
-        linker_opts.append('main.' + to_upper_camel(k) + '=' + v)
+    if BIN_MATRIX[name].get('go_version', False):
+        md = metadata(REPO_ROOT, goos, goarch)
+        if md['version_strategy'] == 'tag':
+            del md['build_timestamp']
+            del md['build_host']
+            del md['build_host_os']
+            del md['build_host_arch']
+        for k, v in md.items():
+            linker_opts.append('-X')
+            linker_opts.append('main.' + to_upper_camel(k) + '=' + v)
 
     cgo_env = 'CGO_ENABLED=0'
     cgo = ''
@@ -153,26 +176,45 @@ def go_build(name, goos, goarch, main):
     bindir = 'dist/{name}'.format(name=name)
     if not os.path.isdir(bindir):
         os.makedirs(bindir)
-    cmd = "GOOS={goos} GOARCH={goarch} {cgo_env} {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
-        name=name,
-        goc=GOC,
-        goos=goos,
-        goarch=goarch,
-        bindir=bindir,
-        cgo_env=cgo_env,
-        cgo=cgo,
-        ldflags=ldflags,
-        ext='.exe' if goos == 'windows' else '',
-        main=main
-    )
+    if goos == 'alpine':
+        repo_dir = REPO_ROOT[len(GOPATH):]
+        uid = check_output('id -u').strip()
+        cmd = "docker run --rm -ti -u {uid} -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} golang:1.8.3-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
+            repo_root=REPO_ROOT,
+            repo_dir=repo_dir,
+            uid=uid,
+            name=name,
+            goc=GOC,
+            goos=goos,
+            goarch=goarch,
+            bindir=bindir,
+            cgo_env=cgo_env,
+            cgo=cgo,
+            ldflags=ldflags,
+            ext='.exe' if goos == 'windows' else '',
+            main=main
+        )
+    else:
+        cmd = "GOOS={goos} GOARCH={goarch} {cgo_env} {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
+            name=name,
+            goc=GOC,
+            goos=goos,
+            goarch=goarch,
+            bindir=bindir,
+            cgo_env=cgo_env,
+            cgo=cgo,
+            ldflags=ldflags,
+            ext='.exe' if goos == 'windows' else '',
+            main=main
+        )
     die(call(cmd, cwd=REPO_ROOT))
-    print '\n'
+    print('')
 
 
 def upload_to_cloud(folder, f, version):
     write_checksum(folder, f)
     name = os.path.basename(folder)
-    if name not in BIN_MATRIX.keys():
+    if name not in BIN_MATRIX:
         return
     if ENV == 'prod' and not BIN_MATRIX[name].get('release', False):
         return
@@ -180,13 +222,12 @@ def upload_to_cloud(folder, f, version):
     buckets = BUCKET_MATRIX.get(ENV, BUCKET_MATRIX['dev'])
     if not isinstance(buckets, dict):
         buckets = {buckets: ''}
-    for bucket, region in buckets.iteritems():
-        dst = "{bucket}/binaries/{name}/{version}/{file}{ext}".format(
+    for bucket, region in buckets.items():
+        dst = "{bucket}/binaries/{name}/{version}/{file}".format(
             bucket=bucket,
             name=name,
             version=version,
-            file=f,
-            ext='.exe' if '-windows-' in f else ''
+            file=f
         )
         if bucket.startswith('gs://'):
             upload_to_gcs(folder, f, dst, BIN_MATRIX[name].get('release', False))
@@ -222,8 +263,50 @@ def update_registry(version):
     lf = dist + '/latest.txt'
     write_file(lf, version)
     for name in os.listdir(dist):
-        if name not in BIN_MATRIX.keys():
-            return
+        if os.path.isfile(dist + '/' + name):
+            continue
+        if name not in BIN_MATRIX:
+            continue
         call("gsutil cp {2} {0}/binaries/{1}/latest.txt".format(bucket, name, lf), cwd=REPO_ROOT)
         if BIN_MATRIX[name].get('release', False):
             call('gsutil acl ch -u AllUsers:R -r {0}/binaries/{1}/latest.txt'.format(bucket, name), cwd=REPO_ROOT)
+
+
+def ungroup_go_imports(*paths):
+    for p in paths:
+        if os.path.isfile(p):
+            print('Ungrouping imports of file: ' + p)
+            _ungroup_go_imports(p)
+        elif os.path.isdir(p):
+            print('Ungrouping imports of dir: ' + p)
+            for dir, _, files in os.walk(p):
+                for f in fnmatch.filter(files, '*.go'):
+                    _ungroup_go_imports(dir + '/' + f)
+        else:
+            for f in glob.glob(p):
+                print('Ungrouping imports of file: ' + f)
+                _ungroup_go_imports(f)
+
+
+BEGIN_IMPORT_REGEX = ur'import \(\s*'
+END_IMPORT_REGEX = ur'\)\s*'
+
+
+def _ungroup_go_imports(fname):
+    with open(fname, 'r+') as f:
+        content = f.readlines()
+        out = []
+        import_block = False
+        for line in content:
+            c = line.strip()
+            if import_block:
+                if c == '':
+                    continue
+                elif re.match(END_IMPORT_REGEX, c) is not None:
+                    import_block = False
+            elif re.match(BEGIN_IMPORT_REGEX, c) is not None:
+                    import_block = True
+            out.append(line)
+        f.seek(0)
+        f.writelines(out)
+        f.truncate()
