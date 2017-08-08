@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: analytics
+  labels:
+    app: analytics
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: analytics
+    spec:
+      containers:
+        - image: appscode/analytics:0.2.0
+          name: analytics
+          ports:
+            - containerPort: 5050
+              name: http
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics
+  labels:
+    app: analytics
+spec:
+  ports:
+  - port: 5050
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: analytics

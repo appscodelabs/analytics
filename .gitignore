@@ -31,3 +31,4 @@ _testmain.go
 # external packages folder
 .idea/
 dist/
+.vscode/

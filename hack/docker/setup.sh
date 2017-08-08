@@ -4,54 +4,88 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-LIB_ROOT=$(dirname "${BASH_SOURCE}")/..
-source "$LIB_ROOT/libbuild/common/lib.sh"
-source "$LIB_ROOT/libbuild/common/public_image.sh"
-
 GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
 ROOT=$GOPATH
+REPO_ROOT=$GOPATH/src/github.com/appscode/analytics
+
+source "$REPO_ROOT/hack/libbuild/common/lib.sh"
+source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
+IMG=analytics
 
-IMG=client-ip
-# TAG=0.1.0
-if [ -f "$GOPATH/src/github.com/appscode/client-ip/dist/.tag" ]; then
-	export $(cat $GOPATH/src/github.com/appscode/client-ip/dist/.tag | xargs)
+DIST=$GOPATH/src/github.com/appscode/analytics/dist
+mkdir -p $DIST
+if [ -f "$DIST/.tag" ]; then
+	export $(cat $DIST/.tag | xargs)
 fi
 
+clean() {
+    pushd $GOPATH/src/github.com/appscode/analytics/hack/docker
+    rm analytics Dockerfile
+    popd
+}
+
 build_binary() {
-	pushd $GOPATH/src/github.com/appscode/client-ip
-	./hack/builddeps.sh
+    pushd $GOPATH/src/github.com/appscode/analytics
+    ./hack/builddeps.sh
     ./hack/make.py build
-	detect_tag $GOPATH/src/github.com/appscode/client-ip/dist/.tag
-	popd
+    detect_tag $DIST/.tag
+    popd
 }
 
 build_docker() {
-	pushd $GOPATH/src/github.com/appscode/client-ip/hack/docker
-	cp $GOPATH/src/github.com/appscode/client-ip/dist/client-ip/client-ip-linux-amd64 client-ip
-	chmod 755 client-ip
+    pushd $GOPATH/src/github.com/appscode/analytics/hack/docker
+    cp $DIST/analytics/analytics-alpine-amd64 analytics
+    chmod 755 analytics
 
-	cat >Dockerfile <<EOL
+    cat >Dockerfile <<EOL
 FROM alpine
 
-COPY client-ip /client-ip
+RUN set -x \
+  && apk add --update --no-cache ca-certificates
+
+COPY analytics /usr/bin/analytics
 
 USER nobody:nobody
-ENTRYPOINT ["/client-ip"]
+ENTRYPOINT ["analytics"]
 EOL
-	local cmd="docker build -t appscode/$IMG:$TAG ."
-	echo $cmd; $cmd
+    local cmd="docker build -t appscode/$IMG:$TAG ."
+    echo $cmd; $cmd
 
-	rm client-ip Dockerfile
-	popd
+    rm analytics Dockerfile
+    popd
 }
 
 build() {
-	build_binary
-	build_docker
+    build_binary
+    build_docker
+}
+
+docker_push() {
+    if [ "$APPSCODE_ENV" = "prod" ]; then
+        echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"
+        exit 0
+    fi
+    if [ "$TAG_STRATEGY" = "git_tag" ]; then
+        echo "Are you trying to 'release' binaries to prod?"
+        exit 1
+    fi
+    hub_canary
+}
+
+docker_release() {
+    if [ "$APPSCODE_ENV" != "prod" ]; then
+        echo "'release' only works in PROD env."
+        exit 1
+    fi
+    if [ "$TAG_STRATEGY" != "git_tag" ]; then
+        echo "'apply_tag' to release binaries and/or docker images."
+        exit 1
+    fi
+    hub_up
 }
 
 source_repo $@

@@ -2,7 +2,7 @@
 Description=Provide host facts
 
 [Service]
-ExecStart=/usr/bin/client-ip --addr=:443
+ExecStart=/usr/bin/analytics --addr=:443
 Restart=always
 RestartSec=5
 
