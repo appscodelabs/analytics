@@ -12,11 +12,11 @@ spec:
         app: analytics
     spec:
       containers:
-        - image: appscode/analytics:0.2.0
+        - image: appscode/analytics:canary
           name: analytics
           ports:
-            - containerPort: 5050
-              name: http
+            - containerPort: 9844
+              name: web
               protocol: TCP
 ---
 apiVersion: v1
@@ -27,8 +27,8 @@ metadata:
     app: analytics
 spec:
   ports:
-  - port: 5050
+  - port: 9844
     protocol: TCP
-    targetPort: http
+    targetPort: web
   selector:
     app: analytics
