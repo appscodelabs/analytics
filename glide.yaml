@@ -2,3 +2,6 @@ package: github.com/appscode/analytics
 import:
 - package: github.com/appscode/go
 - package: github.com/spf13/pflag
+- package: github.com/grpc-ecosystem/go-grpc-prometheus
+  version: master
+- package: github.com/jpillora/go-ogle-analytics
