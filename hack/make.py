@@ -33,7 +33,6 @@ import os
 import os.path
 import subprocess
 import sys
-import yaml
 from os.path import expandvars, join, dirname
 
 libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/appscode/analytics'
