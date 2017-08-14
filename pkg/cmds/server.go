@@ -2,7 +2,7 @@ package cmds
 
 import (
 	"github.com/appscode/analytics/pkg/analytics"
-	"github.com/appscode/analytics/pkg/docker"
+	"github.com/appscode/analytics/pkg/dockerapi"
 	"github.com/appscode/analytics/pkg/server"
 	"github.com/robfig/cron"
 	"github.com/spf13/cobra"
@@ -30,7 +30,7 @@ func NewCmdServer(version string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			// Docker Analytics Starts Here
 			c := cron.New()
-			c.AddFunc("@every 4h", docker_api.DockerAnalytics)
+			c.AddFunc("@every 4h", dockerapi.DockerAnalytics)
 			c.Start()
 			// Ends Here
 

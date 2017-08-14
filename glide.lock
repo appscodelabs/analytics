@@ -1,8 +1,8 @@
 hash: 98c42c283968d71da06dd12f3d6d18d1ba8745d1c21c1053f14b39769a9232e0
-updated: 2017-08-11T11:42:27.518757043+06:00
+updated: 2017-08-14T11:03:06.560376004+06:00
 imports:
 - name: cloud.google.com/go
-  version: 0a5bb7db78b9975657a49fd8c8dcbf00deacd108
+  version: 17070f292bf97b558ae233be8f9c4de135eef1cd
   subpackages:
   - compute/metadata
 - name: github.com/appscode/errors
@@ -103,5 +103,5 @@ imports:
   - internal/urlfetch
   - urlfetch
 - name: gopkg.in/yaml.v2
-  version: 25c4ec802a7d637f88d584ab26798e94ad14c13b
+  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
 testImports: []

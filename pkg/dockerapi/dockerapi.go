@@ -1,4 +1,4 @@
-package docker_api
+package dockerapi
 
 import (
 	"encoding/json"
@@ -20,9 +20,9 @@ import (
 )
 
 type DockerRepositories struct {
-	Count    int         `json:"count"`
-	Next     interface{} `json:"next"`
-	Previous interface{} `json:"previous"`
+	Count    int     `json:"count"`
+	Next     *string `json:"next"`
+	Previous *string `json:"previous"`
 	Results  []struct {
 		User           string      `json:"user"`
 		Name           string      `json:"name"`
@@ -52,7 +52,6 @@ const SpreadSheetIdKubeDB = "10OGrTJxEDox4VR15U7HPGRjiFpTNfhiUGMuL7BQJKJU"   //h
 const SpreadSheetIdAppsCode = "18lNbYqiP4gsKBoLDoUw2ejOGWN3t3mUOyKGaKeye3kI" //https://docs.google.com/spreadsheets/d/18lNbYqiP4gsKBoLDoUw2ejOGWN3t3mUOyKGaKeye3kI
 
 func getDockerLogs(link string) (*DockerRepositories, error) {
-
 	url := link
 
 	// Build the request
@@ -60,9 +59,7 @@ func getDockerLogs(link string) (*DockerRepositories, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	client := &http.Client{}
-
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -80,7 +77,6 @@ func getDockerLogs(link string) (*DockerRepositories, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
 		return nil, err
 	}
-
 	return &record, nil
 }
 
@@ -88,17 +84,13 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) (string, error) 
 	// Usase Limits: https://developers.google.com/sheets/api/limits
 	// 100 Requeste per 100Seconds per User
 	// 500 requests per 100 seconds per project
-	// So, making it slow each request
+	// So, taking 5seconds before each request
 	time.Sleep(5 * time.Second)
 
 	ctx := context.Background()
 
 	//Reading Secret File from /.Credential
-	secretFilePath, err := getSecretFilePath()
-	if err != nil {
-		return "", errors.New("Unable to detect repository of client secret file").Err()
-	}
-	b, err := ioutil.ReadFile(secretFilePath)
+	b, err := getSecretFilePath()
 	if err != nil {
 		return "", errors.New("Unable to read client secret file").Err()
 	}
@@ -185,8 +177,8 @@ func processAndUpdate(spreadSheetId string, link string) {
 	}
 
 	log.Println(dockerResp.Next)
-	for str, ok := dockerResp.Next.(string); ok; {
-		dockerResp, err = getDockerLogs(str)
+	for dockerResp.Next != nil {
+		dockerResp, err = getDockerLogs(*dockerResp.Next)
 
 		if err != nil {
 			log.Fatalf("Unable to retrieve Docker log.s %v", err)
@@ -205,32 +197,30 @@ func processAndUpdate(spreadSheetId string, link string) {
 				log.Println(respStr)
 			}
 		}
-		str, ok = dockerResp.Next.(string)
 		log.Println(dockerResp.Next)
 	}
 }
 
 // File Path: ~/.credentials/client_secret_spreadsheet.json
-func getSecretFilePath() (string, error) {
+func getSecretFilePath() ([]byte, error) {
 	usr, err := user.Current()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	fileDir := filepath.Join(usr.HomeDir, ".credentials")
 	os.MkdirAll(fileDir, 0700)
-	return filepath.Join(fileDir,
-		url.QueryEscape("client_secret_spreadsheet.json")), err
+	secretTokenPath := filepath.Join(fileDir, url.QueryEscape("client_secret_spreadsheet.json"))
+	if err != nil {
+		return nil, errors.New("Unable to detect repository of client secret file").Err()
+	}
+	return ioutil.ReadFile(secretTokenPath)
 }
 
 func deleteSheet(SpreadSheetId string) {
 	ctx := context.Background()
 
 	//Reading Secret File from /.Credential
-	secretFilePath, err := getSecretFilePath()
-	if err != nil {
-		log.Println("Unable to detect repository of client secret file")
-	}
-	b, err := ioutil.ReadFile(secretFilePath)
+	b, err := getSecretFilePath()
 	if err != nil {
 		log.Println("Unable to read client secret file")
 	}
