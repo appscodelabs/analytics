@@ -1,7 +1,6 @@
 package pixels
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -26,9 +25,11 @@ func ImageHits(w http.ResponseWriter, req *http.Request) {
 	path := strings.SplitN(req.URL.Path, "/", 4)[3]
 	err := sendPageView(params.Get(":trackingcode"), params.Get(":host"), req.RemoteAddr, req.UserAgent(), path)
 	if err != nil {
-		log.Println(err)
-		//Continue, because return response to api request.
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Content-Type", "image/gif")
 	w.Write(GIF)
 }
 
