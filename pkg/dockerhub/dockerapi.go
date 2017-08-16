@@ -135,7 +135,7 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
 	return nil
 }
 
-func refresh(spreadSheetId string, link string) error {
+func refreshStats(spreadSheetId string, link string) error {
 	dockerResp, err := getDockerLogs(link)
 	if err != nil {
 		return errors.FromErr(err).Err()
@@ -184,51 +184,9 @@ func getClientSecret() ([]byte, error) {
 	return ioutil.ReadFile(filepath.Join(fileDir, url.QueryEscape("client_secret_spreadsheet.json")))
 }
 
-func deleteSheet(SpreadSheetId string) error {
-	ctx := context.Background()
-	b, err := getClientSecret()
-	if err != nil {
-		return errors.FromErr(err).Err()
-	}
-
-	// If modifying these scopes, delete previously saved credentials
-	// at ~/.credentials/sheets.googleapis.com-go-api.json
-	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets")
-	if err != nil {
-		return errors.FromErr(err).Err()
-	}
-	client := spreadsheet.GetClient(ctx, config)
-	srv, err := sheets.New(client)
-	if err != nil {
-		return errors.FromErr(err).Err()
-	}
-
-	docResp, err := srv.Spreadsheets.Get(SpreadSheetId).Context(ctx).Do()
-	for _, c := range docResp.Sheets {
-		// Delete sheets if exists
-		requests := []*sheets.Request{}
-		requests = append(requests, &sheets.Request{
-			DeleteSheet: &sheets.DeleteSheetRequest{
-				SheetId: c.Properties.SheetId,
-			},
-		})
-		batchRequest := &sheets.BatchUpdateSpreadsheetRequest{
-			Requests: requests,
-		}
-		if _, err := srv.Spreadsheets.BatchUpdate(SpreadSheetId, batchRequest).Context(ctx).Do(); err == nil {
-			log.Println("sheet successfully Deleted")
-		} else {
-			return errors.FromErr(err).Err()
-			//Error because most probably sheet name already exists.
-			//So, Do the rest of the work.
-		}
-	}
-	return nil
-}
-
 func CollectAnalytics(dockerOrgs map[string]string) error {
 	for org, sheetID := range dockerOrgs {
-		err := refresh(sheetID, fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=50", org))
+		err := refreshStats(sheetID, fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=50", org))
 		if err != nil {
 			return errors.FromErr(err).Err()
 		}

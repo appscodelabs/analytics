@@ -47,11 +47,11 @@ func NewCmdServer(version string) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&srv.WebAddress, "web-address", srv.WebAddress, "Http server address")
-	cmd.Flags().StringVar(&srv.CACertFile, "caCertFile", srv.CACertFile, "File containing CA certificate")
-	cmd.Flags().StringVar(&srv.CertFile, "certFile", srv.CertFile, "File container server TLS certificate")
-	cmd.Flags().StringVar(&srv.KeyFile, "keyFile", srv.KeyFile, "File containing server TLS private key")
+	cmd.Flags().StringVar(&srv.CACertFile, "cacert-file", srv.CACertFile, "File containing CA certificate")
+	cmd.Flags().StringVar(&srv.CertFile, "cert-file", srv.CertFile, "File container server TLS certificate")
+	cmd.Flags().StringVar(&srv.KeyFile, "key-file", srv.KeyFile, "File containing server TLS private key")
 
-	cmd.Flags().StringToStringVar(&srv.DockerHubOrgs, "dockerHubOrgs", srv.DockerHubOrgs, "Map of Docker Hub organizations to Google spreadsheets")
+	cmd.Flags().StringToStringVar(&srv.DockerHubOrgs, "docker-hub-orgs", srv.DockerHubOrgs, "Map of Docker Hub organizations to Google spreadsheets")
 
 	cmd.Flags().StringVar(&srv.OpsAddress, "ops-addr", srv.OpsAddress, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().BoolVar(&srv.EnableAnalytics, "analytics", srv.EnableAnalytics, "Send analytical events to Google Analytics")
