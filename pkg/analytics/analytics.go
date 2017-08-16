@@ -54,3 +54,16 @@ func SendEvent(category string, action, label string) {
 	}
 	send(event)
 }
+
+func SendPageView(trackingcode, host, ip, userAgent, path string) {
+	client, err := ga.NewClient(trackingcode)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	client.DocumentHostName(host)
+	client.IPOverride(ip)
+	client.UserAgentOverride(userAgent)
+	client.DocumentPath(path)
+
+	client.Send(ga.NewPageview())
+}

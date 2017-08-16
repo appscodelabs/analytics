@@ -51,11 +51,10 @@ type DockerRepoLogs struct {
 const SpreadSheetIdKubeDB = "10OGrTJxEDox4VR15U7HPGRjiFpTNfhiUGMuL7BQJKJU"   //https://docs.google.com/spreadsheets/d/10OGrTJxEDox4VR15U7HPGRjiFpTNfhiUGMuL7BQJKJU
 const SpreadSheetIdAppsCode = "18lNbYqiP4gsKBoLDoUw2ejOGWN3t3mUOyKGaKeye3kI" //https://docs.google.com/spreadsheets/d/18lNbYqiP4gsKBoLDoUw2ejOGWN3t3mUOyKGaKeye3kI
 
-func getDockerLogs(link string) (*DockerRepositories, error) {
-	url := link
+func getDockerLogs(urlLink string) (*DockerRepositories, error) {
 
 	// Build the request
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", urlLink, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +83,7 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) (string, error) 
 	// Usase Limits: https://developers.google.com/sheets/api/limits
 	// 100 Requeste per 100Seconds per User
 	// 500 requests per 100 seconds per project
-	// So, taking 5seconds before each request
+	// So, taking 5seconds before two requests
 	time.Sleep(5 * time.Second)
 
 	ctx := context.Background()
@@ -95,8 +94,8 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) (string, error) 
 		return "", errors.New("Unable to read client secret file").Err()
 	}
 
-	// If modifying these scopes, delete your previously saved credentials
-	// at ~/.credentials/sheets.googleapis.com-go-quickstart.json
+	// If modifying these scopes, delete previously saved credentials
+	// at ~/.credentials/sheets.googleapis.com-go-api.json
 	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets")
 	if err != nil {
 		return "", errors.New("Unable to parse client secret file to config").Err()
@@ -166,7 +165,7 @@ func processAndUpdate(spreadSheetId string, link string) {
 			User:        c.User,
 			StarCount:   c.StarCount,
 			PullCount:   c.PullCount,
-			LastUpdated: c.LastUpdated,
+			LastUpdated: time.Now(),
 		}, spreadSheetId)
 
 		if err != nil {
@@ -189,7 +188,7 @@ func processAndUpdate(spreadSheetId string, link string) {
 				User:        c.User,
 				StarCount:   c.StarCount,
 				PullCount:   c.PullCount,
-				LastUpdated: c.LastUpdated,
+				LastUpdated: time.Now(),
 			}, spreadSheetId)
 			if err != nil {
 				log.Println("Error while updating ", c.Name, err)
@@ -209,11 +208,7 @@ func getSecretFilePath() ([]byte, error) {
 	}
 	fileDir := filepath.Join(usr.HomeDir, ".credentials")
 	os.MkdirAll(fileDir, 0700)
-	secretTokenPath := filepath.Join(fileDir, url.QueryEscape("client_secret_spreadsheet.json"))
-	if err != nil {
-		return nil, errors.New("Unable to detect repository of client secret file").Err()
-	}
-	return ioutil.ReadFile(secretTokenPath)
+	return ioutil.ReadFile(filepath.Join(fileDir, url.QueryEscape("client_secret_spreadsheet.json")))
 }
 
 func deleteSheet(SpreadSheetId string) {
@@ -222,11 +217,11 @@ func deleteSheet(SpreadSheetId string) {
 	//Reading Secret File from /.Credential
 	b, err := getSecretFilePath()
 	if err != nil {
-		log.Println("Unable to read client secret file")
+		log.Println("Unable to read client secret file", err)
 	}
 
-	// If modifying these scopes, delete your previously saved credentials
-	// at ~/.credentials/sheets.googleapis.com-go-quickstart.json
+	// If modifying these scopes, delete previously saved credentials
+	// at ~/.credentials/sheets.googleapis.com-go-api.json
 	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets")
 	if err != nil {
 		log.Println("Unable to parse client secret file to config")

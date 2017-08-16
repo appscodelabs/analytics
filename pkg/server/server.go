@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/appscode/analytics/pkg/clientip"
+	"github.com/appscode/analytics/pkg/pixels"
 	"github.com/appscode/log"
 	"github.com/appscode/pat"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -35,6 +36,7 @@ func (s Server) ListenAndServe() {
 
 	m := pat.New()
 	m.Get("/whoami", http.HandlerFunc((clientip.WhoAmI)))
+	m.Get("/ga/:trackingcode/:host/", http.HandlerFunc(pixels.ImageHits))
 	srv := &http.Server{
 		Addr:         s.WebAddress,
 		ReadTimeout:  5 * time.Second,
