@@ -1,6 +1,8 @@
 package pixels
 
 import (
+	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
@@ -16,14 +18,21 @@ var GIF = []byte{
 	1, 0, 1, 0, 0, 2, 1, 68, 0, 59,
 }
 
-func ImageHits(w http.ResponseWriter, req *http.Request) {
-	params, found := pat.FromContext(req.Context())
+func ImageHits(w http.ResponseWriter, r *http.Request) {
+	params, found := pat.FromContext(r.Context())
 	if !found {
 		http.Error(w, "Missing parameters", http.StatusBadRequest)
 		return
 	}
-	path := strings.SplitN(req.URL.Path, "/", 4)[3]
-	err := sendPageView(params.Get(":trackingcode"), params.Get(":host"), req.RemoteAddr, req.UserAgent(), path)
+	path := strings.SplitN(r.URL.Path, "/", 4)[3]
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("userip: %q is not IP:port", r.RemoteAddr), 500)
+		return
+	}
+
+	err = sendPageView(params.Get(":trackingcode"), params.Get(":host"), ip, r.UserAgent(), path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -33,8 +42,8 @@ func ImageHits(w http.ResponseWriter, req *http.Request) {
 	w.Write(GIF)
 }
 
-func sendPageView(trackingcode, host, ip, userAgent, path string) error {
-	client, err := ga.NewClient(trackingcode)
+func sendPageView(trackingCode, host, ip, userAgent, path string) error {
+	client, err := ga.NewClient(trackingCode)
 	if err != nil {
 		return errors.FromErr(err).Err()
 	}
