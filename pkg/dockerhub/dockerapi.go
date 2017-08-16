@@ -1,4 +1,4 @@
-package dockerapi
+package dockerhub
 
 import (
 	"encoding/json"
@@ -19,7 +19,7 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-type DockerRepositories struct {
+type OrgStats struct {
 	Count    int     `json:"count"`
 	Next     *string `json:"next"`
 	Previous *string `json:"previous"`
@@ -34,14 +34,14 @@ type DockerRepositories struct {
 }
 
 type DockerRepoLogs struct {
-	User        string
-	Name        string
-	StarCount   int
-	PullCount   int
-	LastUpdated time.Time
+	User      string
+	Name      string
+	StarCount int
+	PullCount int
+	Timestamp time.Time
 }
 
-func getDockerLogs(urlLink string) (*DockerRepositories, error) {
+func getDockerLogs(urlLink string) (*OrgStats, error) {
 	// Build the request
 	req, err := http.NewRequest("GET", urlLink, nil)
 	if err != nil {
@@ -59,7 +59,7 @@ func getDockerLogs(urlLink string) (*DockerRepositories, error) {
 	defer resp.Body.Close()
 
 	// Fill the record with the data from the JSON
-	var record DockerRepositories
+	var record OrgStats
 
 	// Use json.Decode for reading streams of JSON data
 	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
@@ -113,7 +113,7 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
 	}
 	if _, err := srv.Spreadsheets.BatchUpdate(SpreadSheetId, batchRequest).Context(ctx).Do(); err == nil {
 		log.Println(dockLogs.Name, "sheet successfully created")
-		values = append(values, []interface{}{"Last Updated", "Pull Count", "Star Count"})
+		values = append(values, []interface{}{"Timestamp", "Pull Count", "Star Count"})
 	} else {
 		log.Println(err)
 		//Error because most probably sheet name already exists.
@@ -121,7 +121,7 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
 	}
 
 	// Assign DockerRepoLogs to into values
-	values = append(values, []interface{}{dockLogs.LastUpdated, dockLogs.PullCount, dockLogs.StarCount})
+	values = append(values, []interface{}{dockLogs.Timestamp, dockLogs.PullCount, dockLogs.StarCount})
 	rangeValue := dockLogs.Name + "!A:C"
 	valueInputOption := "RAW"
 	rb := &sheets.ValueRange{
@@ -135,18 +135,18 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
 	return nil
 }
 
-func processAndUpdate(spreadSheetId string, link string) error {
+func refresh(spreadSheetId string, link string) error {
 	dockerResp, err := getDockerLogs(link)
 	if err != nil {
 		return errors.FromErr(err).Err()
 	}
 	for _, c := range dockerResp.Results {
 		err := updateSheet(DockerRepoLogs{
-			Name:        c.Name,
-			User:        c.User,
-			StarCount:   c.StarCount,
-			PullCount:   c.PullCount,
-			LastUpdated: time.Now(),
+			Name:      c.Name,
+			User:      c.User,
+			StarCount: c.StarCount,
+			PullCount: c.PullCount,
+			Timestamp: time.Now(),
 		}, spreadSheetId)
 		if err != nil {
 			return errors.FromErr(err).Err()
@@ -159,11 +159,11 @@ func processAndUpdate(spreadSheetId string, link string) error {
 		}
 		for _, c := range dockerResp.Results {
 			err := updateSheet(DockerRepoLogs{
-				Name:        c.Name,
-				User:        c.User,
-				StarCount:   c.StarCount,
-				PullCount:   c.PullCount,
-				LastUpdated: time.Now(),
+				Name:      c.Name,
+				User:      c.User,
+				StarCount: c.StarCount,
+				PullCount: c.PullCount,
+				Timestamp: time.Now(),
 			}, spreadSheetId)
 			if err != nil {
 				return errors.FromErr(err).Err()
@@ -226,21 +226,12 @@ func deleteSheet(SpreadSheetId string) error {
 	return nil
 }
 
-func DockerAnalytics(dockerOrgs map[string]string) error {
-	for key, value := range dockerOrgs {
-		err := processAndUpdate(value, fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=50", key))
+func CollectAnalytics(dockerOrgs map[string]string) error {
+	for org, sheetID := range dockerOrgs {
+		err := refresh(sheetID, fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=50", org))
 		if err != nil {
 			return errors.FromErr(err).Err()
 		}
 	}
-
 	return nil
-
-	// To delete all the sheets of a Spreadsheet
-	/*for _,value :=range hostfacts.Server.DockerHubOrgs {
-		err := deleteSheet(value)
-		if err!=nil {
-			return errors.FromErr(err).Err()
-		}
-	}*/
 }
