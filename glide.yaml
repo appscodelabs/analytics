@@ -1,13 +1,20 @@
 package: github.com/appscode/analytics
 import:
+- package: github.com/appscode/errors
+  version: v2
 - package: github.com/appscode/go
 - package: github.com/appscode/log
 - package: github.com/appscode/pat
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/prometheus/client_golang
   version: v0.8.0
+- package: github.com/robfig/cron
+  version: master
 - package: github.com/spf13/cobra
 - package: github.com/spf13/pflag
   repo: https://github.com/appscode/pflag.git
   vcs: git
   version: master
+- package: golang.org/x/net
+- package: golang.org/x/oauth2
+- package: google.golang.org/api
