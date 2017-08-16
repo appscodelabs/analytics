@@ -7,12 +7,7 @@ Analytics can be installed using YAML files includes in the [/hack/deploy](/hack
 
 ```console
 # Install without RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/analytics/master/hack/deploy/without-rbac.yaml \
-  | kubectl apply -f -
-
-
-# Install with RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/analytics/master/hack/deploy/with-rbac.yaml \
+$ curl https://raw.githubusercontent.com/appscode/analytics/0.1.0/hack/deploy/analytics.yaml \
   | kubectl apply -f -
 ```
 

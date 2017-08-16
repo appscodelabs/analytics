@@ -12,7 +12,7 @@ spec:
         app: analytics
     spec:
       containers:
-        - image: appscode/analytics:canary
+        - image: appscode/analytics:0.1.0
           name: analytics
           ports:
             - containerPort: 9844
