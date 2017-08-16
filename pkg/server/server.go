@@ -21,6 +21,8 @@ type Server struct {
 	CertFile   string
 	KeyFile    string
 
+	DockerHubOrgs map[string]string
+
 	OpsAddress      string
 	EnableAnalytics bool
 }

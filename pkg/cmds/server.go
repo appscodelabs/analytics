@@ -12,6 +12,7 @@ func NewCmdServer(version string) *cobra.Command {
 	srv := hostfacts.Server{
 		WebAddress:      ":9844",
 		OpsAddress:      ":56790",
+		DockerHubOrgs:   map[string]string{},
 		EnableAnalytics: true,
 	}
 	cmd := &cobra.Command{
@@ -40,6 +41,8 @@ func NewCmdServer(version string) *cobra.Command {
 	cmd.Flags().StringVar(&srv.CACertFile, "caCertFile", srv.CACertFile, "File containing CA certificate")
 	cmd.Flags().StringVar(&srv.CertFile, "certFile", srv.CertFile, "File container server TLS certificate")
 	cmd.Flags().StringVar(&srv.KeyFile, "keyFile", srv.KeyFile, "File containing server TLS private key")
+
+	cmd.Flags().StringToStringVar(&srv.DockerHubOrgs, "dockerHubOrgs", srv.DockerHubOrgs, "Map of Docker Hub organizations to Google spreadsheets")
 
 	cmd.Flags().StringVar(&srv.OpsAddress, "ops-addr", srv.OpsAddress, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().BoolVar(&srv.EnableAnalytics, "analytics", srv.EnableAnalytics, "Send analytical events to Google Analytics")

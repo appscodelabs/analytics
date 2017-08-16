@@ -1,5 +1,5 @@
-hash: 98c42c283968d71da06dd12f3d6d18d1ba8745d1c21c1053f14b39769a9232e0
-updated: 2017-08-16T01:18:51.723844253-07:00
+hash: 6b5b94076d9646da2b7e3f57c9f6edaf445b6a1c291689139c14dbf7dea5a596
+updated: 2017-08-16T02:30:59.624735709-07:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -71,7 +71,9 @@ imports:
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+  version: 0f53e09b6e0414581a4e540b3731ea7aa721e7fe
+  repo: https://github.com/appscode/pflag.git
+  vcs: git
 - name: golang.org/x/net
   version: da118f7b8e5954f39d0d2130ab35d4bf0e3cb344
   subpackages:
