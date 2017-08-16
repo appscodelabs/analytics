@@ -37,7 +37,7 @@ func (s Server) ListenAndServe() {
 	}()
 
 	m := pat.New()
-	m.Get("/whoami", http.HandlerFunc((clientip.WhoAmI)))
+	m.Get("/whoami/", http.HandlerFunc((clientip.WhoAmI)))
 	m.Get("/ga/:trackingcode/:host/", http.HandlerFunc(pixels.ImageHits))
 	srv := &http.Server{
 		Addr:         s.WebAddress,
