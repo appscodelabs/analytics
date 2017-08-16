@@ -14,13 +14,14 @@ analytics run [flags]
 ### Options
 
 ```
-      --analytics            Send analytical events to Google Analytics (default true)
-      --caCertFile string    File containing CA certificate
-      --certFile string      File container server TLS certificate
-  -h, --help                 help for run
-      --keyFile string       File containing server TLS private key
-      --ops-addr string      Address to listen on for web interface and telemetry. (default ":56790")
-      --web-address string   Http server address (default ":9844")
+      --analytics                      Send analytical events to Google Analytics (default true)
+      --caCertFile string              File containing CA certificate
+      --certFile string                File container server TLS certificate
+      --dockerHubOrgs stringToString   Map of Docker Hub organizations to Google spreadsheets (default [])
+  -h, --help                           help for run
+      --keyFile string                 File containing server TLS private key
+      --ops-addr string                Address to listen on for web interface and telemetry. (default ":56790")
+      --web-address string             Http server address (default ":9844")
 ```
 
 ### Options inherited from parent commands
