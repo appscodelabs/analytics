@@ -13,13 +13,15 @@ func NewCmdDockerHub() *cobra.Command {
 		Short:             "Shows Dockerhub logs",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := DockerPrinter(DockerHubOrgs); err != nil {
+			output := cmd.Flag("output").Value.String()
+			if err := DockerPrinter(DockerHubOrgs, output); err != nil {
 				log.Fatalln(err)
 			}
 		},
 	}
 
 	cmd.Flags().StringArrayVar(&DockerHubOrgs, "docker-hub-orgs", DockerHubOrgs, "Array of Docker Hub organizations")
+	cmd.Flags().String("output", "", "Directory used to store docker hub stats report")
 
 	return cmd
 }
