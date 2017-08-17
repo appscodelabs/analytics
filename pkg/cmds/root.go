@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 
+	"github.com/appscode/analytics/pkg/dockerhub/printer"
 	v "github.com/appscode/go/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -26,5 +27,6 @@ func NewRootCmd(version string) *cobra.Command {
 
 	cmd.AddCommand(NewCmdServer(version))
 	cmd.AddCommand(v.NewCmdVersion())
+	cmd.AddCommand(printer.NewCmdDockerHub())
 	return cmd
 }

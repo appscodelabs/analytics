@@ -41,7 +41,7 @@ type DockerRepoLogs struct {
 	Timestamp time.Time
 }
 
-func getDockerLogs(urlLink string) (*OrgStats, error) {
+func GetDockerLogs(urlLink string) (*OrgStats, error) {
 	// Build the request
 	req, err := http.NewRequest("GET", urlLink, nil)
 	if err != nil {
@@ -136,7 +136,7 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
 }
 
 func refreshStats(spreadSheetId string, link string) error {
-	dockerResp, err := getDockerLogs(link)
+	dockerResp, err := GetDockerLogs(link)
 	if err != nil {
 		return errors.FromErr(err).Err()
 	}
@@ -153,7 +153,7 @@ func refreshStats(spreadSheetId string, link string) error {
 		}
 	}
 	for dockerResp.Next != nil {
-		dockerResp, err = getDockerLogs(*dockerResp.Next)
+		dockerResp, err = GetDockerLogs(*dockerResp.Next)
 		if err != nil {
 			return errors.FromErr(err).Err()
 		}
