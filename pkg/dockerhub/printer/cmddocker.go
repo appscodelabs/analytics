@@ -20,7 +20,7 @@ func NewCmdDockerHub() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringArrayVar(&DockerHubOrgs, "docker-hub-orgs", DockerHubOrgs, "Array of Docker Hub organizations")
+	cmd.Flags().StringSliceVar(&DockerHubOrgs, "docker-hub-orgs", DockerHubOrgs, "Array of Docker Hub organizations")
 	cmd.Flags().String("output", "", "Directory used to store docker hub stats report")
 
 	return cmd
