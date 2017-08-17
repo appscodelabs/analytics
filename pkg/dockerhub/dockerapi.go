@@ -19,26 +19,21 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
+type RepoStats struct {
+	User        string    `json:"user"`
+	Name        string    `json:"name"`
+	Namespace   string    `json:"namespace"`
+	StarCount   int       `json:"star_count"`
+	PullCount   int       `json:"pull_count"`
+	LastUpdated time.Time `json:"last_updated"`
+	Timestamp   time.Time `json:"-"`
+}
+
 type OrgStats struct {
 	Count    int     `json:"count"`
 	Next     *string `json:"next"`
 	Previous *string `json:"previous"`
-	Results  []struct {
-		User        string    `json:"user"`
-		Name        string    `json:"name"`
-		Namespace   string    `json:"namespace"`
-		StarCount   int       `json:"star_count"`
-		PullCount   int       `json:"pull_count"`
-		LastUpdated time.Time `json:"last_updated"`
-	} `json:"results"`
-}
-
-type DockerRepoLogs struct {
-	User      string
-	Name      string
-	StarCount int
-	PullCount int
-	Timestamp time.Time
+	Results  []RepoStats `json:"results"`
 }
 
 func GetDockerLogs(urlLink string) (*OrgStats, error) {
@@ -68,7 +63,7 @@ func GetDockerLogs(urlLink string) (*OrgStats, error) {
 	return &record, nil
 }
 
-func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
+func updateSheet(dockLogs RepoStats, SpreadSheetId string) error {
 	// Usase Limits: https://developers.google.com/sheets/api/limits
 	// 100 Requeste per 100Seconds per User
 	// 500 requests per 100 seconds per project
@@ -120,7 +115,7 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
 		//So, Do the rest of the work.
 	}
 
-	// Assign DockerRepoLogs to into values
+	// Assign RepoStats to into values
 	values = append(values, []interface{}{dockLogs.Timestamp, dockLogs.PullCount, dockLogs.StarCount})
 	rangeValue := dockLogs.Name + "!A:C"
 	valueInputOption := "RAW"
@@ -141,7 +136,7 @@ func refreshStats(spreadSheetId string, link string) error {
 		return errors.FromErr(err).Err()
 	}
 	for _, c := range dockerResp.Results {
-		err := updateSheet(DockerRepoLogs{
+		err := updateSheet(RepoStats{
 			Name:      c.Name,
 			User:      c.User,
 			StarCount: c.StarCount,
@@ -158,7 +153,7 @@ func refreshStats(spreadSheetId string, link string) error {
 			return errors.FromErr(err).Err()
 		}
 		for _, c := range dockerResp.Results {
-			err := updateSheet(DockerRepoLogs{
+			err := updateSheet(RepoStats{
 				Name:      c.Name,
 				User:      c.User,
 				StarCount: c.StarCount,
