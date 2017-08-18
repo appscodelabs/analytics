@@ -3,6 +3,7 @@ package spreadsheet
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -10,8 +11,11 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/appscode/errors"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/sheets/v4"
 )
 
 // getClient uses a Context and Config to retrieve a Token
@@ -84,4 +88,32 @@ func saveToken(file string, token *oauth2.Token) {
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
+}
+
+func GetNewSheetService() (*sheets.Service, error) {
+	ctx := context.Background()
+	b, err := getClientSecret()
+	if err != nil {
+		return nil, errors.New("Unable to read client secret file").Err()
+	}
+	// If modifying these scopes, delete previously saved credentials
+	// at ~/.credentials/sheets.googleapis.com-go-api.json
+	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets")
+	if err != nil {
+		return nil, errors.New("Unable to parse client secret file to config").Err()
+	}
+	client := GetClient(ctx, config)
+	srv, err := sheets.New(client)
+	return srv, err
+}
+
+// File Path: ~/.credentials/client_secret_spreadsheet.json
+func getClientSecret() ([]byte, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+	fileDir := filepath.Join(usr.HomeDir, ".credentials")
+	os.MkdirAll(fileDir, 0700)
+	return ioutil.ReadFile(filepath.Join(fileDir, url.QueryEscape("client_secret_spreadsheet.json")))
 }

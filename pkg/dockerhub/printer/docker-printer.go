@@ -26,8 +26,7 @@ func DockerPrinter(strArr []string, output string) error {
 }
 
 func processAndPrint(output string, org string) error {
-	link := fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=50", org)
-	dockerResp, err := dockerhub.GetDockerLogs(link)
+	results, err := dockerhub.GetRepoStats(org)
 	if err != nil {
 		return errors.FromErr(err).Err()
 	}
@@ -36,31 +35,20 @@ func processAndPrint(output string, org string) error {
 	w := getNewTabWriter()
 	defer w.Flush()
 
-	// CSV writer
+	// New CSV writer
 	var wCSV *csv.Writer
 	if output != "" {
 		wCSV, err = getNewCSVWriter(output, org)
 		defer wCSV.Flush()
 	}
 
-	// Fetch dockerhub logs and write to writer
-	first := true
-	for first || dockerResp.Next != nil {
-		if !first {
-			dockerResp, err = dockerhub.GetDockerLogs(*dockerResp.Next)
-			if err != nil {
-				return errors.FromErr(err).Err()
-			}
+	for _, repo := range results {
+		//NAME,	PUL COUNT,	STAR COUNT,	LAST UPDATED
+		str := fmt.Sprintf("%v/%v\t%v\t%v\t%v", repo.User, repo.Name, repo.PullCount, repo.StarCount, repo.LastUpdated.Format("2006-01-02 15:04"))
+		fmt.Fprintln(w, str)
+		if output != "" {
+			wCSV.Write([]string{repo.Name, strconv.FormatInt(int64(repo.PullCount), 10), strconv.FormatInt(int64(repo.StarCount), 10), repo.LastUpdated.Format("2006-01-02 15:04")})
 		}
-		for _, c := range dockerResp.Results {
-			//NAME,	PUL COUNT,	STAR COUNT,	LAST UPDATED
-			str := fmt.Sprintf("%v/%v\t%v\t%v\t%v", c.User, c.Name, c.PullCount, c.StarCount, c.LastUpdated)
-			fmt.Fprintln(w, str)
-			if output != "" {
-				wCSV.Write([]string{c.Name, strconv.FormatInt(int64(c.PullCount), 10), strconv.FormatInt(int64(c.StarCount), 10), c.LastUpdated.String()})
-			}
-		}
-		first = false
 	}
 	fmt.Fprintln(w, "\n")
 	return nil

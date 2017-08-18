@@ -1,17 +1,28 @@
-## analytics
+## analytics dockerhub
 
-Analytics by AppsCode - Essential analytics for OSS
+Shows Dockerhub logs
 
 ### Synopsis
 
 
-Analytics by AppsCode - Essential analytics for OSS
+Shows Dockerhub logs
+
+```
+analytics dockerhub [flags]
+```
 
 ### Options
 
 ```
+      --docker-hub-orgs stringSlice   Array of Docker Hub organizations
+  -h, --help                          help for dockerhub
+      --output string                 Directory used to store docker hub stats report
+```
+
+### Options inherited from parent commands
+
+```
       --alsologtostderr                  log to standard error as well as files
-  -h, --help                             help for analytics
       --log_backtrace_at traceLocation   when logging hits line file:N, emit a stack trace (default :0)
       --log_dir string                   If non-empty, write log files in this directory
       --logtostderr                      log to standard error instead of files
@@ -21,7 +32,5 @@ Analytics by AppsCode - Essential analytics for OSS
 ```
 
 ### SEE ALSO
-* [analytics dockerhub](analytics_dockerhub.md)	 - Shows Dockerhub logs
-* [analytics run](analytics_run.md)	 - Run server
-* [analytics version](analytics_version.md)	 - Prints binary version number.
+* [analytics](analytics.md)	 - Analytics by AppsCode - Essential analytics for OSS
 
