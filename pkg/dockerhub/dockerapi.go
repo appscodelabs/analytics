@@ -3,42 +3,31 @@ package dockerhub
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
-	"os/user"
-	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/appscode/analytics/pkg/spreadsheet"
 	"github.com/appscode/errors"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sheets/v4"
 )
 
-type OrgStats struct {
-	Count    int     `json:"count"`
-	Next     *string `json:"next"`
-	Previous *string `json:"previous"`
-	Results  []struct {
-		User        string    `json:"user"`
-		Name        string    `json:"name"`
-		Namespace   string    `json:"namespace"`
-		StarCount   int       `json:"star_count"`
-		PullCount   int       `json:"pull_count"`
-		LastUpdated time.Time `json:"last_updated"`
-	} `json:"results"`
+type RepoStats struct {
+	User        string    `json:"user"`
+	Name        string    `json:"name"`
+	Namespace   string    `json:"namespace"`
+	StarCount   int       `json:"star_count"`
+	PullCount   int       `json:"pull_count"`
+	LastUpdated time.Time `json:"last_updated"`
 }
 
-type DockerRepoLogs struct {
-	User      string
-	Name      string
-	StarCount int
-	PullCount int
-	Timestamp time.Time
+type OrgStats struct {
+	Count    int         `json:"count"`
+	Next     *string     `json:"next"`
+	Previous *string     `json:"previous"`
+	Results  []RepoStats `json:"results"`
 }
 
 func getDockerLogs(urlLink string) (*OrgStats, error) {
@@ -68,42 +57,41 @@ func getDockerLogs(urlLink string) (*OrgStats, error) {
 	return &record, nil
 }
 
-func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
+func updateSheet(srv *sheets.Service, spreadSheetID string, repo RepoStats, blank bool) error {
 	// Usase Limits: https://developers.google.com/sheets/api/limits
 	// 100 Requeste per 100Seconds per User
 	// 500 requests per 100 seconds per project
 	// So, taking 5seconds before two requests
 	time.Sleep(5 * time.Second)
-
 	ctx := context.Background()
-	b, err := getClientSecret()
-	if err != nil {
-		return errors.New("Unable to read client secret file").Err()
+	var values [][]interface{}
+	// Assign RepoStats to into values
+	if blank {
+		values = append(values, []interface{}{"Timestamp", "Pull Count", "Star Count"})
 	}
-
-	// If modifying these scopes, delete previously saved credentials
-	// at ~/.credentials/sheets.googleapis.com-go-api.json
-	config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets")
-	if err != nil {
-		return errors.New("Unable to parse client secret file to config").Err()
+	values = append(values, []interface{}{time.Now().Format("2006-01-02 15:04:05 Z07:00"), repo.PullCount, repo.StarCount})
+	rangeValue := repo.Name + "!A:C"
+	valueInputOption := "RAW"
+	rb := &sheets.ValueRange{
+		Values: values,
 	}
-	client := spreadsheet.GetClient(ctx, config)
-	srv, err := sheets.New(client)
+	resp, err := srv.Spreadsheets.Values.Append(spreadSheetID, rangeValue, rb).ValueInputOption(valueInputOption).Context(ctx).Do()
 	if err != nil {
 		return errors.FromErr(err).Err()
 	}
+	log.Printf("Successful [%v] row insertion in [%v] for [%v/%v]\n", resp.Updates.UpdatedRows, resp.SpreadsheetId, repo.User, repo.Name)
+	return nil
+}
 
-	var values [][]interface{}
-	// Create sheet if not exists.
+func createSheet(srv *sheets.Service, spreadSheetID string, repo RepoStats) error {
+	ctx := context.Background()
 	requests := []*sheets.Request{}
 	requests = append(requests, &sheets.Request{
 		AddSheet: &sheets.AddSheetRequest{
 			Properties: &sheets.SheetProperties{
-				Title: dockLogs.Name,
+				Title: repo.Name,
 				GridProperties: &sheets.GridProperties{
 					ColumnCount: 3,
-					//because only 2000000 cells are allowed!
-					//ref:
 				},
 			},
 		},
@@ -111,82 +99,65 @@ func updateSheet(dockLogs DockerRepoLogs, SpreadSheetId string) error {
 	batchRequest := &sheets.BatchUpdateSpreadsheetRequest{
 		Requests: requests,
 	}
-	if _, err := srv.Spreadsheets.BatchUpdate(SpreadSheetId, batchRequest).Context(ctx).Do(); err == nil {
-		log.Println(dockLogs.Name, "sheet successfully created")
-		values = append(values, []interface{}{"Timestamp", "Pull Count", "Star Count"})
-	} else {
-		log.Println(err)
-		//Error because most probably sheet name already exists.
-		//So, Do the rest of the work.
+	if _, err := srv.Spreadsheets.BatchUpdate(spreadSheetID, batchRequest).Context(ctx).Do(); err != nil {
+		return err
 	}
-
-	// Assign DockerRepoLogs to into values
-	values = append(values, []interface{}{dockLogs.Timestamp, dockLogs.PullCount, dockLogs.StarCount})
-	rangeValue := dockLogs.Name + "!A:C"
-	valueInputOption := "RAW"
-	rb := &sheets.ValueRange{
-		Values: values,
-	}
-	resp, err := srv.Spreadsheets.Values.Append(SpreadSheetId, rangeValue, rb).ValueInputOption(valueInputOption).Context(ctx).Do()
-	if err != nil {
-		return errors.FromErr(err).Err()
-	}
-	log.Printf("Successful [%v] row insertion in [%v] for [%v/%v]\n", resp.Updates.UpdatedRows, resp.SpreadsheetId, dockLogs.User, dockLogs.Name)
 	return nil
 }
 
-func refreshStats(spreadSheetId string, link string) error {
+func GetRepoStats(org string) ([]RepoStats, error) {
+	link := fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=50", org)
 	dockerResp, err := getDockerLogs(link)
 	if err != nil {
+		return nil, errors.FromErr(err).Err()
+	}
+	result := make([]RepoStats, 0)
+
+	first := true
+	for first || dockerResp.Next != nil {
+		if !first {
+			dockerResp, err = getDockerLogs(*dockerResp.Next)
+			if err != nil {
+				return nil, errors.FromErr(err).Err()
+			}
+		}
+		result = append(result, dockerResp.Results...)
+		first = false
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Name < result[j].Name })
+	return result, nil
+}
+
+func sheetAndStats(sheetid, org string) error {
+	result, err := GetRepoStats(org)
+	if err != nil {
 		return errors.FromErr(err).Err()
 	}
-	for _, c := range dockerResp.Results {
-		err := updateSheet(DockerRepoLogs{
-			Name:      c.Name,
-			User:      c.User,
-			StarCount: c.StarCount,
-			PullCount: c.PullCount,
-			Timestamp: time.Now(),
-		}, spreadSheetId)
-		if err != nil {
-			return errors.FromErr(err).Err()
-		}
+	srv, err := spreadsheet.GetNewSheetService()
+	if err != nil {
+		return errors.FromErr(err).Err()
 	}
-	for dockerResp.Next != nil {
-		dockerResp, err = getDockerLogs(*dockerResp.Next)
-		if err != nil {
-			return errors.FromErr(err).Err()
+	for _, c := range result {
+		blank := false
+		if err := createSheet(srv, sheetid, c); err != nil {
+			log.Println(err)
+			//Error because most probably sheet name already exists.
+			//So, Do the rest of the work.
+		} else {
+			log.Println(c.Name, "sheet successfully created")
+			blank = true
 		}
-		for _, c := range dockerResp.Results {
-			err := updateSheet(DockerRepoLogs{
-				Name:      c.Name,
-				User:      c.User,
-				StarCount: c.StarCount,
-				PullCount: c.PullCount,
-				Timestamp: time.Now(),
-			}, spreadSheetId)
-			if err != nil {
-				return errors.FromErr(err).Err()
-			}
+
+		if err = updateSheet(srv, sheetid, c, blank); err != nil {
+			return errors.FromErr(err).Err()
 		}
 	}
 	return nil
-}
-
-// File Path: ~/.credentials/client_secret_spreadsheet.json
-func getClientSecret() ([]byte, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-	fileDir := filepath.Join(usr.HomeDir, ".credentials")
-	os.MkdirAll(fileDir, 0700)
-	return ioutil.ReadFile(filepath.Join(fileDir, url.QueryEscape("client_secret_spreadsheet.json")))
 }
 
 func CollectAnalytics(dockerOrgs map[string]string) error {
 	for org, sheetID := range dockerOrgs {
-		err := refreshStats(sheetID, fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=50", org))
+		err := sheetAndStats(sheetID, org)
 		if err != nil {
 			return errors.FromErr(err).Err()
 		}
