@@ -2,8 +2,9 @@ package cmds
 
 import (
 	"github.com/appscode/analytics/pkg/analytics"
-	"github.com/appscode/analytics/pkg/dockerhub"
 	"github.com/appscode/analytics/pkg/server"
+	"github.com/appscode/analytics/pkg/dockerhub"
+	"github.com/appscode/analytics/pkg/spreadsheet"
 	"github.com/appscode/log"
 	"github.com/robfig/cron"
 	"github.com/spf13/cobra"
@@ -30,6 +31,7 @@ func NewCmdServer(version string) *cobra.Command {
 			analytics.SendEvent("analytics", "stopped", version)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			spreadsheet.Client_secret_path = cmd.Flag("client-secret-dir").Value.String()
 			if err := dockerhub.CollectAnalytics(srv.DockerHubOrgs); err != nil {
 				log.Fatalln(err)
 			}
@@ -52,6 +54,7 @@ func NewCmdServer(version string) *cobra.Command {
 	cmd.Flags().StringVar(&srv.KeyFile, "key-file", srv.KeyFile, "File containing server TLS private key")
 
 	cmd.Flags().StringToStringVar(&srv.DockerHubOrgs, "docker-hub-orgs", srv.DockerHubOrgs, "Map of Docker Hub organizations to Google spreadsheets")
+	cmd.Flags().String("client-secret-dir", "/tmp/secrets/credentials", "Directory used to store client secrets and access tokens")
 
 	cmd.Flags().StringVar(&srv.OpsAddress, "ops-addr", srv.OpsAddress, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().BoolVar(&srv.EnableAnalytics, "analytics", srv.EnableAnalytics, "Send analytical events to Google Analytics")

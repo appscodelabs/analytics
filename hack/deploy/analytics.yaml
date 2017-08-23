@@ -12,12 +12,27 @@ spec:
         app: analytics
     spec:
       containers:
-        - image: appscode/analytics:0.1.0
+        - image: maruftuhin/analytics:0.1.2  #testing
           name: analytics
+          imagePullPolicy: Always   #testing
+          args:
+          - run
+          - --v=3
+          - --docker-hub-orgs=appscode=1zSZGehbu0O62FksNKk5sY5ZeBMQbyz2BFmbUVaf1spQ
+          - --client-secret-dir=/tmp/secrets/credentials/testing
           ports:
             - containerPort: 9844
               name: web
               protocol: TCP
+          volumeMounts:
+            - mountPath: /tmp/secrets/credentials/testing
+              name: credentials
+              readOnly: true
+      volumes:
+        - name: credentials
+          secret:
+            secretName: client-secret
+
 ---
 apiVersion: v1
 kind: Service
