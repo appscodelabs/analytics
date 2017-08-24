@@ -17,6 +17,7 @@ analytics run [flags]
       --analytics                        Send analytical events to Google Analytics (default true)
       --cacert-file string               File containing CA certificate
       --cert-file string                 File container server TLS certificate
+      --client-secret-dir string         Directory used to store client secrets and access tokens (default "/tmp/secrets/credentials")
       --docker-hub-orgs stringToString   Map of Docker Hub organizations to Google spreadsheets (default [])
   -h, --help                             help for run
       --key-file string                  File containing server TLS private key

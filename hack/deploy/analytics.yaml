@@ -12,13 +12,12 @@ spec:
         app: analytics
     spec:
       containers:
-        - image: maruftuhin/analytics:0.1.2  #testing
+        - image: appscode/analytics:0.1.1
           name: analytics
-          imagePullPolicy: Always   #testing
           args:
           - run
           - --v=3
-          - --docker-hub-orgs=appscode=1zSZGehbu0O62FksNKk5sY5ZeBMQbyz2BFmbUVaf1spQ
+          - --docker-hub-orgs=kubedb=1UexPVL8szwm99T_9ccz__FdOFB_G2g-kpQOW4UkETG0
           - --client-secret-dir=/tmp/secrets/credentials/testing
           ports:
             - containerPort: 9844

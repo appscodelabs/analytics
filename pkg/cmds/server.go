@@ -2,8 +2,8 @@ package cmds
 
 import (
 	"github.com/appscode/analytics/pkg/analytics"
-	"github.com/appscode/analytics/pkg/server"
 	"github.com/appscode/analytics/pkg/dockerhub"
+	"github.com/appscode/analytics/pkg/server"
 	"github.com/appscode/analytics/pkg/spreadsheet"
 	"github.com/appscode/log"
 	"github.com/robfig/cron"

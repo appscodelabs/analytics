@@ -21,7 +21,7 @@ var Client_secret_path string
 
 // getClient uses a Context and Config to retrieve a Token
 // then generate a Client. It returns the generated Client.
-func GetClient(ctx context.Context, config *oauth2.Config) (*http.Client,error) {
+func GetClient(ctx context.Context, config *oauth2.Config) (*http.Client, error) {
 	cacheFile, err := tokenCacheFile()
 	if err != nil {
 		return nil, errors.FromErr(err).Err()
@@ -30,35 +30,35 @@ func GetClient(ctx context.Context, config *oauth2.Config) (*http.Client,error) 
 	if err != nil {
 		log.Println(err)
 		// Browse the token and saves in file directory
-		tok,err = getTokenFromWeb(config)
-		if err != nil{
-			return nil,errors.FromErr(err).Err()
+		tok, err = getTokenFromWeb(config)
+		if err != nil {
+			return nil, errors.FromErr(err).Err()
 		}
 		err = saveToken(cacheFile, tok)
-		if err != nil{
-			return nil,errors.FromErr(err).Err()
+		if err != nil {
+			return nil, errors.FromErr(err).Err()
 		}
 	}
-	return config.Client(ctx, tok),nil
+	return config.Client(ctx, tok), nil
 }
 
 // getTokenFromWeb uses Config to request a Token.
 // It returns the retrieved Token.
-func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token,error) {
+func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	fmt.Printf("Go to the following link in your browser then type the "+
 		"authorization code: \n%v\n", authURL)
 
 	var code string
 	if _, err := fmt.Scan(&code); err != nil {
-		return nil,errors.FromErr(err).Err()
+		return nil, errors.FromErr(err).Err()
 	}
 
 	tok, err := config.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		return nil,errors.FromErr(err).Err()
+		return nil, errors.FromErr(err).Err()
 	}
-	return tok,nil
+	return tok, nil
 }
 
 // tokenCacheFile generates credential file path/filename.
@@ -108,9 +108,9 @@ func GetNewSheetService() (*sheets.Service, error) {
 	if err != nil {
 		return nil, errors.New("Unable to parse client secret file to config").Err()
 	}
-	client,err := GetClient(ctx, config)
-	if err !=nil{
-		return nil,errors.FromErr(err).Err()
+	client, err := GetClient(ctx, config)
+	if err != nil {
+		return nil, errors.FromErr(err).Err()
 	}
 	srv, err := sheets.New(client)
 	return srv, err
